@@ -1,35 +1,35 @@
-import PropTypes from 'prop-types';
-import s from './ContactList.module.css';
+import * as contactsOperations from '../../redux/contacts/contacts-operations';
+import * as contactsSelectors  from '../../redux/contacts/contacts-selectors';
+import { useDispatch, useSelector } from 'react-redux';
+import { useEffect } from 'react';
 
-function ContactList({ contacts, onDeleteContact }) {
+import ContactItem from '../ContactItem/ContactItem';
+import { Grid } from '@material-ui/core';
+import { makeStyles } from '@material-ui/core/styles';
+
+const useStyles = makeStyles(theme => ({
+  root: {
+    marginTop: theme.spacing(2),
+    listStyle: 'none',
+  },
+}));
+
+export default function ContactList({ onEdit }) {
+  const contacts = useSelector(contactsSelectors.getFilteredContacts);
+
+  const dispatch = useDispatch();
+  const c = useStyles();
+
+  useEffect(() => dispatch(contactsOperations.fetchContacts()), [dispatch]);
+
   return (
-    <ul className={s.list}>
-      {contacts.map(({ id, name, number }) => (
-        <li className={s.item} key={id}>
-          <p className={s.info}>
-            {name}: {number}
-          </p>
-          <button
-            className={s.btn}
-            type="button"
-            onClick={() => onDeleteContact(id)} >
-            Delete
-           </button>
-        </li>
-      ))}
-    </ul>
+    <>
+      <Grid container component="ul" spacing={3} className={c.root}>
+        {contacts.length > 0 &&
+          contacts.map(contact => (
+            <ContactItem key={contact.id} contact={contact} onEdit={onEdit} />
+          ))}
+      </Grid>
+    </>
   );
 }
-
-ContactList.propTypes = {
-  contacts: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.string.isRequired,
-      name: PropTypes.string.isRequired,
-      number: PropTypes.string.isRequired,
-    }),
-  ),
-  onDeleteContact: PropTypes.func.isRequired,
-};
-
-export default ContactList;

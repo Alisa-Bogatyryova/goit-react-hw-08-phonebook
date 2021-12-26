@@ -1,62 +1,60 @@
-import { useState } from 'react';
-import shortid from 'shortid';
-import Container from './components/Container/Container';
-import ContactForm from './components/ContactForm/ContactForm';
-import Filter from './components/Filter/Filter';
-import ContactList from './components/ContactList/ContactList';
+import { Redirect, Switch, Route } from 'react-router-dom';
+import { Suspense, lazy, useEffect } from 'react';
+import authSelectors from './redux/auth/auth-selectors';
+import {default as AuthOperations} from './redux/auth/auth-operations';
+import { useDispatch, useSelector } from 'react-redux';
 
-const App = () => {
-  const [contacts, setContacts] = useState([]);
-  const [filter, setFilter] = useState('');
+import AppBar from './components/AppBar/AppBar';
+import CssBaseline from '@material-ui/core/CssBaseline';
+import { LinearProgress } from '@material-ui/core';
+import PrivateRoute from './components/PrivateRoute/PrivateRoute';
+import PublicRoute from './components/PublicRoute/PublicRoute';
 
-  const addContactPhone = (name, number) => {
-    if (contacts.find(contact => contact.name === name)) {
-      alert(`${name} уже есть в списке ваших контактов`);
-      return;
-    }
+const AuthPage = lazy(() =>
+  import('pages/AuthPage/AuthPage' ),
+);
 
-    const contact = {
-      id: shortid.generate(),
-      name,
-      number,
-    };
+const ContactsPage = lazy(() =>
+  import('pages/ContactsPage/ContactsPage' ),
+);
 
-    setContacts(prevState => [...prevState, contact]);
-  };
+export default function App() {
+  const dispatch = useDispatch();
+  const isLogging = useSelector(authSelectors.getIsLogging);
 
-  const deleteContact = contactID => {
-    setContacts(contacts.filter(({ id }) => id !== contactID));
-  };
-
-  const changeFilter = filter => {
-    setFilter(filter);
-  };
-
-  const getVisibleContacts = () => {
-    return contacts.filter(contact =>
-      contact.name.toLowerCase().includes(filter),
-    );
-  };
-
-  const visibleContacts = getVisibleContacts();
+  useEffect(() => {
+    dispatch(AuthOperations.checkCurrentUser());
+  }, [dispatch]);
 
   return (
-    <Container>
-        <ContactForm addContactPhone={addContactPhone} />
-          <h2>Contacts</h2>
-        {contacts.length > 1 && (
-          <Filter value={filter} onChange={changeFilter} />
-        )}
-        {contacts.length > 0 ? (
-          <ContactList
-            contacts={visibleContacts}
-            onDeleteContact={deleteContact}
-          />
-        ) : (
-          <p>Your phonebook is empty. Please add contact.</p>
-        )}
-    </Container>
+    <div className="App">
+      <CssBaseline />
+      {isLogging ? (
+        <LinearProgress />
+      ) : (
+        <>
+          <AppBar />
+          <Suspense fallback={<LinearProgress />}>
+            <Switch>
+              <PrivateRoute path="/" exact redirectTo="/login">
+                <Redirect to="/contacts" />
+              </PrivateRoute>
+              <PublicRoute path="/login" restricted redirectTo="/contacts">
+                <AuthPage />
+              </PublicRoute>
+              <PublicRoute path="/register" restricted redirectTo="/contacts">
+                <AuthPage />
+              </PublicRoute>
+              <PrivateRoute path="/contacts">
+                <ContactsPage />
+              </PrivateRoute>
+              <Route>
+                <Redirect to="/" />
+              </Route>
+            </Switch>
+          </Suspense>
+        </>
+      )}
+    </div>
   );
-};
-
-export default App;
+}

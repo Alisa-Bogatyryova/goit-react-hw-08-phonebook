@@ -1,23 +1,20 @@
-import PropTypes from 'prop-types';
-import s from './Filter.module.css';
+import React from 'react';
+import { TextField } from '@material-ui/core';
+import * as  contactsActions from '../../redux/contacts/contacts-actions';
+import { useDispatch } from 'react-redux';
 
-function Filter({ value, onChange }) {
+export default function Filter() {
+  const dispatch = useDispatch();
   return (
-    <label className={s.label}>
-      Find contacts by name
-      <input
-        className={s.input}
+    <div>
+      <TextField
         type="text"
-        value={value}
-        onChange={onChange}
+        name="filter"
+        label="Find contacts by name:"
+        onChange={e => {
+          dispatch(contactsActions.changeFilter(e.target.value));
+        }}
       />
-    </label>
+    </div>
   );
 }
-
-Filter.propTypes = {
-  value: PropTypes.string,
-  onChange: PropTypes.func.isRequired,
-};
-
-export default Filter;
